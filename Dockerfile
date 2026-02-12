@@ -1,49 +1,40 @@
+# Use slim Python base
 FROM python:3.11-slim
 
-# System deps: we need Node.js, npm, and build tools
-# Note: nodejs from debian slim is often older, but 18+ is usually available in newer slims or can be added.
-# For 3.11-slim (Bookworm), it provides Node.js 18.
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Install Node.js, npm, curl, build tools
+RUN apt-get update && \
+    apt-get install -y nodejs npm curl build-essential git && \
+    rm -rf /var/lib/apt/lists/*
 
-# Working dir
+# Set working directory
 WORKDIR /app
 
-# 1. Backend Prep
-# Copy core Python files
-COPY pyproject.toml .
-COPY requirements-docker.txt ./requirements.txt
+# Copy only essential Python files first to leverage caching
+COPY src/pyproject.toml src/requirements.txt ./src/
+
+# Install only essential Python dependencies
+RUN pip install --upgrade pip && \
+    pip install -r src/requirements.txt
+
+# Copy the rest of your project
 COPY src ./src
-
-# Install Python deps
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# 2. Frontend Prep
-# Copy web folder
 COPY web ./web
+
+# Copy .env.local files (Ensuring they are available for both runtime environments)
+COPY src/.env.local ./src/.env.local
+COPY web/.env.local ./web/.env.local
+
+# Set environment variables for Node.js
+ENV NODE_ENV=development
 WORKDIR /app/web
 
-# Install Node.js dependencies and build
-# This will use the .env.local found in web/ if present
-RUN npm install
-RUN npm run build
+# Install Node dependencies and build frontend
+RUN npm install && npm run build
 
-# 3. Final configuration
-# Move back to root
-WORKDIR /app
+# Expose ports
+EXPOSE 3000 8000 8765
 
-# Expose Next.js port
-EXPOSE 3000
-
-# Start both services parallel in a single container
-# - 'npm start' in web/
-# - 'python src/agent.py dev' in root
-# We use & to background the first and then run the second
-# 'cd web && npm start' handles the frontend
-# 'python src/agent.py dev' handles the agent
-CMD ["sh", "-c", "cd web && npm start & python src/agent.py dev"]
+# Default startup command
+# - Runs the Python agent in the background
+# - Runs the Next.js frontend in the foreground
+CMD ["sh", "-c", "cd ../src && python agent.py dev & cd ../web && npm run dev"]
