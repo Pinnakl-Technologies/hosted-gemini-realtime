@@ -1,33 +1,23 @@
-# Base image
 FROM python:3.11-slim
 
-# Set working directory
+# System deps
+RUN apt-get update && apt-get install -y nodejs npm curl build-essential && rm -rf /var/lib/apt/lists/*
+
+# Working dir
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl build-essential nodejs npm git && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install uv package manager globally
-RUN pip install --upgrade pip
-RUN pip install uv
-
-# Install concurrently globally
-RUN npm install -g concurrently
-
-# Copy Python agent
+# Copy Python files
 COPY pyproject.toml .
+COPY requirements.txt .
 COPY src ./src
 
-# Install Python dependencies
-RUN uv sync
+# Install Python deps
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
 # Copy frontend
 COPY web ./web
 WORKDIR /app/web
-
-# Install Node.js dependencies
 RUN npm install
 RUN npm run build
 
@@ -35,6 +25,6 @@ RUN npm run build
 EXPOSE 3000
 EXPOSE 38623
 
-# Start both frontend + agent
+# Start both services
 WORKDIR /app
-CMD ["sh", "-c", "concurrently \"uv run python src/agent.py start\" \"cd web && npm start\""]
+CMD ["sh", "-c", "cd web && npm start & python src/agent.py dev"]
