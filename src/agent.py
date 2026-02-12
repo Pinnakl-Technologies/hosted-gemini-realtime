@@ -79,7 +79,18 @@ class KnowledgeBase:
                     lines.append(f"\n{cat.upper()}")
                     current_cat = cat
                 desc = f" ({p.get('description', '')})" if p.get("description") else ""
-                sizes = f" Sizes: {', '.join(p.get('sizes', []))}" if p.get("sizes") else ""
+                
+                sizes_data = p.get("sizes", [])
+                if sizes_data:
+                    # If sizes are dicts, extract name or size field
+                    if isinstance(sizes_data[0], dict):
+                        size_list = [s.get("size", "") for s in sizes_data]
+                    else:
+                        size_list = sizes_data
+                    sizes = f" Sizes: {', '.join(size_list)}"
+                else:
+                    sizes = ""
+
                 lines.append(f"• {p.get('name')} — {p.get('price')}{desc}{sizes}")
 
         return "\n".join(lines)
