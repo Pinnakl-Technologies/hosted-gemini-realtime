@@ -1,39 +1,43 @@
-# Use slim Python base (v3.11)
+# Use slim Python base
 FROM python:3.11-slim
 
-# 1. Install System Dependencies (Node.js, npm, and build tools)
-RUN apt-get update && \
-    apt-get install -y nodejs npm curl build-essential git && \
+# 1. Install System Dependencies efficiently
+# We use nodesource to get Node.js without the 600+ debian-native node packages bloat
+RUN apt-get update && apt-get install -y curl build-essential git && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
 # 2. Set Working Directory
 WORKDIR /app
 
-# 3. Setup Python Backend
-COPY pyproject.toml src/requirements.txt ./src/
+# 3. Setup Python Backend (Metadata first for caching)
+COPY src/requirements.txt ./src/
 RUN pip install --upgrade pip && \
     pip install -r src/requirements.txt
 
-# 4. Copy Application Source
+# 4. Setup Frontend (Metadata first for caching)
+COPY web/package*.json ./web/
+WORKDIR /app/web
+RUN npm install
+
+# 5. Copy Application Source
+WORKDIR /app
 COPY src ./src
 COPY web ./web
 
-# 5. Sync Environment Files
-# Use wildcards to prevent build failure if .env.local is missing (ignored by Git)
-# This allows Railway Variables to take over if the files aren't in the repo.
+# 6. Sync Environment Files (Robust Copy)
+# Wildcards prevent build failure if .env.local isn't in Git (Railway ENV vars will take over)
 COPY src/.env.loca[l] ./src/
 COPY web/.env.loca[l] ./web/
 
-# 6. Build Frontend (Next.js)
+# 7. Build Frontend
 WORKDIR /app/web
-RUN npm install && npm run build
+RUN npm run build
 
-# 7. Final Configuration
-# Expose Next.js default port and agent ports
+# 8. Final Configuration
 EXPOSE 3000 8000 8765
 
 # Start both services in parallel
-# Backend: src/agent.py dev
-# Frontend: web/ (next dev)
 WORKDIR /app
 CMD ["sh", "-c", "python src/agent.py dev & cd web && npm run dev:web"]
