@@ -1,7 +1,7 @@
 [service]
 root = "."
-# Match the Dockerfile CMD for consistency
-start = "sh -c 'cd src && python agent.py dev & cd web && npm run dev'"
+# Parallel execution of agent and web frontend
+start = "sh -c 'python src/agent.py dev & cd web && npm run dev:web'"
 healthcheck = ""
 restart_policy = "on-failure"
 max_restart_retries = 10
