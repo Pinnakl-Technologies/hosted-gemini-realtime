@@ -104,6 +104,7 @@ function VoiceInterface() {
 
 export default function Home() {
     const [token, setToken] = useState<string>('');
+    const [url, setUrl] = useState<string>('');
     const [isConnecting, setIsConnecting] = useState(false);
     const [isInCall, setIsInCall] = useState(false);
 
@@ -113,6 +114,7 @@ export default function Home() {
             const response = await fetch('/api/token');
             const data = await response.json();
             setToken(data.token);
+            setUrl(data.url);
             setIsInCall(true);
         } catch (error) {
             console.error('Failed to start call:', error);
@@ -180,7 +182,7 @@ export default function Home() {
     return (
         <LiveKitRoom
             token={token}
-            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+            serverUrl={url}
             connect={true}
             audio={true}
             video={false}
