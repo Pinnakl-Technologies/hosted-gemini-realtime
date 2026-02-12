@@ -1,7 +1,7 @@
-# Use Node base image
+# Base image for Node + Python
 FROM node:20-slim
 
-# 1. Install Python + venv tools
+# Install Python + build tools
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-venv \
@@ -10,26 +10,25 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Create virtualenv for backend
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory
 WORKDIR /app
 
-# 2. Backend setup (Virtual Env)
-# Copy entire context first to ensure 'src' and metadata are present for setuptools
+# Copy all files
 COPY . .
 
-RUN python3 -m venv /opt/venv
-RUN /opt/venv/bin/pip install --upgrade pip
-# Install the root package which includes the src directory
-RUN /opt/venv/bin/pip install .
+# Install backend dependencies
+RUN pip install --upgrade pip
+RUN pip install .
 
-# 3. Frontend setup (Next.js)
+# Install frontend dependencies
 WORKDIR /app/web
 RUN npm install
 RUN npm run build
 
-# 4. Final Prep
+# Start both backend and frontend
 WORKDIR /app
-EXPOSE 3000
-
-# 5. Start command (Both Backend Agent & Frontend Web)
-# Note: Using 'npm start' because Next.js API routes require the server, not just static files.
-CMD ["/bin/bash", "-c", "source /opt/venv/bin/activate && python src/agent.py start & npm --prefix web start -- --hostname 0.0.0.0 --port 3000"]
+CMD ["sh", "-c", "python src/agent.py start & cd web && npx next start --hostname 0.0.0.0 --port $PORT"]

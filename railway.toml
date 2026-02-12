@@ -1,9 +1,7 @@
-[build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+[project]
+name = "rehmat-gemini-monorepo"
+description = "Frontend + Backend all-in-one deployment"
 
-[deploy]
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
-healthcheckPath = "/"
-healthcheckTimeout = 120
+[build]
+builder = "docker"
+# No custom start command needed since Dockerfile CMD handles it
