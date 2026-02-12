@@ -10,18 +10,19 @@ RUN apt-get update && \
 WORKDIR /app
 
 # 3. Setup Python Backend
-# Copy metadata first for caching
 COPY pyproject.toml src/requirements.txt ./src/
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip && \
+    pip install -r src/requirements.txt
 
 # 4. Copy Application Source
 COPY src ./src
 COPY web ./web
 
 # 5. Sync Environment Files
-# Ensuring both frontend and backend pick up their respective local configs
-COPY src/.env.local ./src/.env.local
-COPY web/.env.local ./web/.env.local
+# Use wildcards to prevent build failure if .env.local is missing (ignored by Git)
+# This allows Railway Variables to take over if the files aren't in the repo.
+COPY src/.env.loca[l] ./src/
+COPY web/.env.loca[l] ./web/
 
 # 6. Build Frontend (Next.js)
 WORKDIR /app/web
