@@ -1,7 +1,15 @@
 [service]
 root = "."
 # Parallel execution of agent and web frontend
-start = "sh -c 'python src/agent.py dev & cd web && npm run dev:web'"
+start = "concurrently \"python src/agent.py start\" \"cd web && npm start\""
 healthcheck = ""
 restart_policy = "on-failure"
 max_restart_retries = 10
+
+[env]
+# Ensure required variables are defined in Railway dashboard
+GOOGLE_API_KEY = "required"
+LIVEKIT_URL = "required"
+LIVEKIT_API_KEY = "required"
+LIVEKIT_API_SECRET = "required"
+NEXT_PUBLIC_LIVEKIT_URL = "required"
