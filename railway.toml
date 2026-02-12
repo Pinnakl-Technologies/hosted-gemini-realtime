@@ -1,14 +1,15 @@
-[project]
-name = "rehmat-e-shereen-ai-agent"
+[service]
+root = "."
 
 [deploy]
-# In Railway, the Dockerfile handles the build. 
-# We just need to define the start command if we want to override the Dockerfile CMD.
-start = "concurrently \"uv run python src/agent.py start\" \"cd web && npm start\""
+# Dockerfile handles the build.
+# We ensure the start command is robust.
+start = "sh -c 'cd web && npm start & python src/agent.py dev'"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 [env]
+# Required for the system to function correctly
 GOOGLE_API_KEY = "required"
 LIVEKIT_URL = "required"
 LIVEKIT_API_KEY = "required"
