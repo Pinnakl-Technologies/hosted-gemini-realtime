@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "pip install --upgrade pip && pip install ."
+
+[deploy]
+startCommand = "python src/agent.py start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
