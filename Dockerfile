@@ -1,9 +1,10 @@
-# Use Node.js 20 as the base image
+# Use Node base image
 FROM node:20-slim
 
-# Install system dependencies and Python
+# 1. Install Python + venv tools
 RUN apt-get update && apt-get install -y \
     python3 \
+    python3-venv \
     python3-pip \
     curl \
     build-essential \
@@ -11,27 +12,26 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# 1. Backend Install (Python)
-COPY pyproject.toml ./
-RUN pip3 install --upgrade pip
-RUN pip3 install .
+# 2. Backend setup (Virtual Env to fix PEP 668)
+COPY pyproject.toml uv.lock ./
+RUN python3 -m venv /opt/venv
+RUN /opt/venv/bin/pip install --upgrade pip
+RUN /opt/venv/bin/pip install .
 
-# 2. Frontend Build (Next.js)
+# 3. Frontend setup (Next.js)
 WORKDIR /app/web
 COPY web/package*.json ./
 RUN npm install
 COPY web/ ./
 RUN npm run build
 
-# 3. Final Prep
+# 4. Final Prep
 WORKDIR /app
 COPY . .
 
-# Exposure
+# Expose port
 EXPOSE 3000
 
-# Start both backend agent and frontend web using concurrently
-# This keeps both services running in one robust build as requested
-CMD ["npx", "concurrently", "-n", "agent,web", "-c", "cyan,magenta", \
-    "python src/agent.py start", \
-    "npm --prefix web start -- --hostname 0.0.0.0 --port 3000"]
+# 5. Start command (Both Backend Agent & Frontend Web)
+# Note: Using 'npm start' instead of 'serve' because Next.js API routes (token) require the server.
+CMD ["/bin/bash", "-c", "source /opt/venv/bin/activate && python src/agent.py start & npm --prefix web start -- --hostname 0.0.0.0 --port 3000"]
