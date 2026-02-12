@@ -26,7 +26,11 @@ import livekit.plugins.google
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("rehmat-agent")
 
-load_dotenv(".env.local")
+# Load environment variables (local dev only)
+if Path(".env.local").exists():
+    load_dotenv(".env.local")
+elif Path(".env").exists():
+    load_dotenv(".env")
 
 KNOWLEDGE_FILE = Path("src/rehmateshereen_kb_structured.json")
 
