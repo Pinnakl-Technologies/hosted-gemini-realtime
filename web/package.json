@@ -5,10 +5,9 @@
     "scripts": {
         "dev": "concurrently \"npm run dev:web\" \"npm run dev:agent\"",
         "dev:web": "next dev",
-        "dev:agent": "cd .. && uv run python src/agent.py dev",
+        "dev:agent": "uv run python src/agent.py dev",
         "build": "next build",
-        "start": "next start",
-        "lint": "next lint"
+        "start": "next start"
     },
     "dependencies": {
         "@livekit/components-react": "^2.0.0",

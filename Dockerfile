@@ -1,27 +1,47 @@
-# 1️⃣ Base Node + Python image
-FROM node:20-slim
+# Base image
+FROM python:3.11-slim
 
-# 2️⃣ Install Python dependencies
-RUN apt-get update && apt-get install -y \
-    python3 python3-venv python3-pip curl build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# 3️⃣ Set app working directory
+# Set working directory
 WORKDIR /app
 
-# 4️⃣ Copy everything
-COPY . .
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl build-essential nodejs npm git && \
+    rm -rf /var/lib/apt/lists/*
 
-# 5️⃣ Setup Python virtual environment for agent
+# Install uv for Python dependency management
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install concurrently globally
+RUN npm install -g concurrently
+
+# Copy Python agent
+COPY pyproject.toml .
+COPY src ./src
+
+# Setup Python virtual env
 RUN python3 -m venv /opt/venv
-RUN /opt/venv/bin/pip install --upgrade pip
-RUN /opt/venv/bin/pip install .
+ENV PATH="/opt/venv/bin:$PATH"
 
-# 6️⃣ Build frontend
+# Install Python dependencies
+RUN pip install --upgrade pip
+RUN pip install .
+
+# Copy frontend
+COPY web ./web
 WORKDIR /app/web
+
+# Install Node.js dependencies
 RUN npm install
 RUN npm run build
 
-# 7️⃣ Start both backend + frontend
+# Expose ports
+EXPOSE 3000
+EXPOSE 38623
+
+# Set root working directory
 WORKDIR /app
-CMD bash -c "/opt/venv/bin/python src/agent.py dev & cd web && npx next start --hostname 0.0.0.0 --port 3000"
+
+# Command to run both frontend + agent
+CMD ["sh", "-c", "concurrently \"uv run python src/agent.py dev\" \"cd web && npm start\""]

@@ -1,6 +1,12 @@
-[service]
-root = "."
-start = "bash -c '/opt/venv/bin/python src/agent.py dev & cd web && npx next start --hostname 0.0.0.0 --port 3000'"
-healthcheck = ""  # Disable healthcheck completely
-restart_policy = "on-failure"
-max_restart_retries = 10
+[project]
+name = "rehmat-e-shereen-ai-agent"
+
+[deploy]
+start = "docker build -t app . && docker run -p 3000:3000 -p 38623:38623 app"
+
+[env]
+GOOGLE_API_KEY = "required"
+LIVEKIT_URL = "required"
+LIVEKIT_API_KEY = "required"
+LIVEKIT_API_SECRET = "required"
+NEXT_PUBLIC_LIVEKIT_URL = "required"

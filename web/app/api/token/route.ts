@@ -5,9 +5,9 @@ export async function GET(request: NextRequest) {
     const roomName = 'rehmat-call-' + Math.random().toString(36).substring(7);
     const participantName = 'customer-' + Math.random().toString(36).substring(7);
 
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
-    const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+    const apiKey = process.env.LIVEKIT_API_KEY!;
+    const apiSecret = process.env.LIVEKIT_API_SECRET!;
+    const wsUrl = process.env.LIVEKIT_URL!;
 
     if (!apiKey || !apiSecret || !wsUrl) {
         return NextResponse.json(
