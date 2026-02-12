@@ -14,6 +14,7 @@ WORKDIR /app
 
 # 2. Backend setup (Virtual Env to fix PEP 668)
 COPY pyproject.toml uv.lock ./
+COPY src/ ./src
 RUN python3 -m venv /opt/venv
 RUN /opt/venv/bin/pip install --upgrade pip
 RUN /opt/venv/bin/pip install .
