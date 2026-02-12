@@ -9,31 +9,29 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv for fast Python dependency management
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 WORKDIR /app
 
-# Copy root Python files first for caching
-COPY pyproject.toml uv.lock ./
-RUN uv pip install --system .
+# 1. Backend Install (Python)
+COPY pyproject.toml ./
+RUN pip3 install --upgrade pip
+RUN pip3 install .
 
-# Copy web files and build
-COPY web/package*.json ./web/
+# 2. Frontend Build (Next.js)
 WORKDIR /app/web
-RUN npm ci
+COPY web/package*.json ./
+RUN npm install
 COPY web/ ./
 RUN npm run build
 
-# Copy everything else
+# 3. Final Prep
 WORKDIR /app
 COPY . .
 
-# Expose Next.js port
+# Exposure
 EXPOSE 3000
 
 # Start both backend agent and frontend web using concurrently
-CMD npx concurrently -n "agent,web" -c "cyan,magenta" \
-    "python src/agent.py start" \
-    "npm --prefix web start -- --hostname 0.0.0.0 --port $PORT"
+# This keeps both services running in one robust build as requested
+CMD ["npx", "concurrently", "-n", "agent,web", "-c", "cyan,magenta", \
+    "python src/agent.py start", \
+    "npm --prefix web start -- --hostname 0.0.0.0 --port 3000"]
