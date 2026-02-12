@@ -1,7 +1,6 @@
-# Base image for Node + Python
 FROM node:20-slim
 
-# Install Python + build tools
+# Install Python for backend
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-venv \
@@ -10,25 +9,25 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Create virtualenv for backend
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
 # Set working directory
 WORKDIR /app
 
 # Copy all files
 COPY . .
 
-# Install backend dependencies
-RUN pip install --upgrade pip
-RUN pip install .
+# Create Python virtualenv for backend
+RUN python3 -m venv /opt/venv
+RUN /opt/venv/bin/pip install --upgrade pip
+RUN /opt/venv/bin/pip install .
 
-# Install frontend dependencies
+# Build frontend (Next.js)
 WORKDIR /app/web
 RUN npm install
 RUN npm run build
 
-# Start both backend and frontend
+# Go back to /app
 WORKDIR /app
-CMD ["sh", "-c", "python src/agent.py start & cd web && npx next start --hostname 0.0.0.0 --port $PORT"]
+
+# Start both frontend + backend
+# & runs frontend in background so backend starts too
+CMD bash -c "cd web && npx next start --hostname 0.0.0.0 --port 3000 & cd ../src && /opt/venv/bin/python agent.py start"
